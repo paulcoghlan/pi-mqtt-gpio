@@ -341,7 +341,7 @@ def init_mqtt(config, digital_outputs):
                 "Connected to the MQTT broker with protocol v%s.",
                 config["protocol"])
             for out_conf in digital_outputs:
-                for suffix in (SET_TOPIC, SET_ON_MS_TOPIC, SET_OFF_MS_TOPIC):
+                for suffix in (SET_TOPIC, RESET_TOPIC, SET_ON_MS_TOPIC, SET_OFF_MS_TOPIC):
                     topic = "%s/%s/%s/%s" % (
                         topic_prefix,
                         OUTPUT_TOPIC,
