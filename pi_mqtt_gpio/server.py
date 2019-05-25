@@ -122,11 +122,12 @@ def set_pin(output_config, pin_name, value):
     """
     gpio = GPIO_MODULES[output_config["module"]]
     set_value = not value if output_config["inverted"] else value
-    gpio.set_pin(output_config, pin_name, set_value)
+    gpio.set_pin(output_config[pin_name], set_value)
     _LOG.info(
-        "Set %r output %r to %r",
+        "Set %r output %r (%r) to %r",
         output_config["module"],
         output_config["name"],
+        pin_name,
         set_value)
     payload = output_config["on_payload" if value else "off_payload"]
     client.publish(
