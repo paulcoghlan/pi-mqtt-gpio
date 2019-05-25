@@ -30,6 +30,7 @@ LAST_STATES = {}
 SET_TOPIC = "set"
 SET_ON_MS_TOPIC = "set_on_ms"
 SET_OFF_MS_TOPIC = "set_off_ms"
+RESET_TOPIC = "reset"
 OUTPUT_TOPIC = "output"
 INPUT_TOPIC = "input"
 
@@ -107,11 +108,11 @@ def output_by_name(output_name):
     _LOG.warning("No output found with name of %r", output_name)
 
 
-def set_pin(output_config, value):
+def set_pin(output_config_pin, value):
     """
     Sets the output pin to a new value and publishes it on MQTT.
-    :param output_config: The output configuration
-    :type output_config: dict
+    :param output_config_pin: The output pin
+    :type output_config_pin: int
     :param value: The new value to set it to
     :type value: bool
     :return: None
@@ -119,7 +120,7 @@ def set_pin(output_config, value):
     """
     gpio = GPIO_MODULES[output_config["module"]]
     set_value = not value if output_config["inverted"] else value
-    gpio.set_pin(output_config["pin"], set_value)
+    gpio.set_pin(output_config_pin, set_value)
     _LOG.info(
         "Set %r output %r to %r",
         output_config["module"],
@@ -130,7 +131,6 @@ def set_pin(output_config, value):
         "%s/%s/%s" % (topic_prefix, OUTPUT_TOPIC, output_config["name"]),
         retain=output_config["retain"],
         payload=payload)
-
 
 def handle_set(msg):
     """
@@ -153,8 +153,26 @@ def handle_set(msg):
             output_config["on_payload"],
             output_config["off_payload"])
         return
-    set_pin(output_config, payload == output_config["on_payload"])
+    set_pin(output_config["pin"], payload == output_config["on_payload"])
+    if output_config["enable_pin"] is None:
+        return
+    set_pin(output_config["enable_pin"], True)
 
+def handle_reset(msg):
+    """
+    Handles an incoming 'reset' MQTT message.
+    :param msg: The incoming MQTT message
+    :type msg: paho.mqtt.client.MQTTMessage
+    :return: None
+    :rtype: NoneType
+    """
+    output_name = output_name_from_topic(msg.topic, topic_prefix, SET_TOPIC)
+    output_config = output_by_name(output_name)
+    if output_config is None:
+        return
+    if output_config["enable_pin"] is None:
+        return
+    set_pin(output_config["enable_pin"], False)
 
 def handle_set_ms(msg, value):
     """
@@ -177,11 +195,11 @@ def handle_set_ms(msg, value):
     if output_config is None:
         return
 
-    set_pin(output_config, value)
+    set_pin(output_config["pin"], value)
     scheduler.add_task(Task(
         time() + ms/1000.0,
         set_pin,
-        output_config,
+        output_config["pin"],
         not value
     ))
     _LOG.info(
@@ -373,6 +391,8 @@ def init_mqtt(config, digital_outputs):
                 "Received message on topic %r: %r", msg.topic, msg.payload)
             if msg.topic.endswith("/%s" % SET_TOPIC):
                 handle_set(msg)
+            elif msg.topic.endswith("/%s" % RESET_TOPIC):
+                handle_reset(msg)
             elif msg.topic.endswith("/%s" % SET_ON_MS_TOPIC):
                 handle_set_ms(msg, True)
             elif msg.topic.endswith("/%s" % SET_OFF_MS_TOPIC):
@@ -433,17 +453,17 @@ def initialise_digital_input(in_conf, gpio):
         in_conf["pin"], PinDirection.INPUT, pud, in_conf)
 
 
-def initialise_digital_output(out_conf, gpio):
+def initialise_digital_output(out_conf_pin, gpio):
     """
     Initialises digital output.
-    :param out_conf: Output config
-    :type out_conf: dict
+    :param out_conf_pin: Output config
+    :type out_conf_pin: str
     :param gpio: Instance of GenericGPIO to use to configure the pin
     :type gpio: pi_mqtt_gpio.modules.GenericGPIO
     :return: None
     :rtype: NoneType
     """
-    gpio.setup_pin(out_conf["pin"], PinDirection.OUTPUT, None, out_conf)
+    gpio.setup_pin(out_conf_pin, PinDirection.OUTPUT, None, out_conf)
 
 
 if __name__ == "__main__":

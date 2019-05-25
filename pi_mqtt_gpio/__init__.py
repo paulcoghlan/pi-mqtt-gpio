@@ -170,6 +170,10 @@ digital_outputs:
         type: integer
         required: yes
         min: 0
+      enable_pin:
+        type: integer
+        required: no
+        min: 0
       on_payload:
         type: string
         required: no
