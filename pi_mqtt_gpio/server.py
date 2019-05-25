@@ -108,11 +108,13 @@ def output_by_name(output_name):
     _LOG.warning("No output found with name of %r", output_name)
 
 
-def set_pin(output_config_pin, value):
+def set_pin(output_config, pin_name, value):
     """
     Sets the output pin to a new value and publishes it on MQTT.
-    :param output_config_pin: The output pin
-    :type output_config_pin: int
+    :param output_config: The output config
+    :type output_config: dict
+    :param pin_name: The output pin key
+    :type pin_name: str
     :param value: The new value to set it to
     :type value: bool
     :return: None
@@ -120,7 +122,7 @@ def set_pin(output_config_pin, value):
     """
     gpio = GPIO_MODULES[output_config["module"]]
     set_value = not value if output_config["inverted"] else value
-    gpio.set_pin(output_config_pin, set_value)
+    gpio.set_pin(output_config, pin_name, set_value)
     _LOG.info(
         "Set %r output %r to %r",
         output_config["module"],
@@ -153,10 +155,10 @@ def handle_set(msg):
             output_config["on_payload"],
             output_config["off_payload"])
         return
-    set_pin(output_config["pin"], payload == output_config["on_payload"])
+    set_pin(output_config, "pin", payload == output_config["on_payload"])
     if output_config["enable_pin"] is None:
         return
-    set_pin(output_config["enable_pin"], True)
+    set_pin(output_config, "enable_pin", True)
 
 def handle_reset(msg):
     """
@@ -172,7 +174,7 @@ def handle_reset(msg):
         return
     if output_config["enable_pin"] is None:
         return
-    set_pin(output_config["enable_pin"], False)
+    set_pin(output_config, "enable_pin", False)
 
 def handle_set_ms(msg, value):
     """
@@ -195,11 +197,12 @@ def handle_set_ms(msg, value):
     if output_config is None:
         return
 
-    set_pin(output_config["pin"], value)
+    set_pin(output_config, "pin", value)
     scheduler.add_task(Task(
         time() + ms/1000.0,
         set_pin,
-        output_config["pin"],
+        output_config,
+        "pin",
         not value
     ))
     _LOG.info(
