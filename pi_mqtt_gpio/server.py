@@ -130,10 +130,6 @@ def set_pin(output_config, pin_name, value):
         pin_name,
         set_value)
     payload = output_config["on_payload" if value else "off_payload"]
-    client.publish(
-        "%s/%s/%s" % (topic_prefix, OUTPUT_TOPIC, output_config["name"]),
-        retain=output_config["retain"],
-        payload=payload)
 
 def handle_set(msg):
     """
@@ -160,6 +156,11 @@ def handle_set(msg):
     if output_config["enable_pin"] is None:
         return
     set_pin(output_config, "enable_pin", True)
+    client.publish(
+        "%s/%s/%s" % (topic_prefix, OUTPUT_TOPIC, output_config["name"]),
+        retain=output_config["retain"],
+        payload=payload)
+
 
 def handle_reset(msg):
     """
@@ -176,6 +177,11 @@ def handle_reset(msg):
     if output_config["enable_pin"] is None:
         return
     set_pin(output_config, "enable_pin", False)
+    payload = msg.payload.decode("utf8")
+    client.publish(
+        "%s/%s/%s" % (topic_prefix, OUTPUT_TOPIC, output_config["name"]),
+        retain=output_config["retain"],
+        payload=payload)
 
 def handle_set_ms(msg, value):
     """
