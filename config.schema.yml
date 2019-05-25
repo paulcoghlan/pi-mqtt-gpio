@@ -175,6 +175,11 @@ digital_outputs:
         type: string
         required: no
         empty: no
+      disable_payload:
+        type: string
+        required: no
+        empty: no
+        default: STOP
       off_payload:
         type: string
         required: no

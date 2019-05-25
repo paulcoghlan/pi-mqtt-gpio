@@ -145,17 +145,18 @@ def handle_set(msg):
         return
     payload = msg.payload.decode("utf8")
     if payload not in (
-            output_config["on_payload"], output_config["off_payload"]):
+            output_config["on_payload"], output_config["disable_payload"], output_config["off_payload"]):
         _LOG.warning(
-            "Payload %r does not relate to configured on/off values %r and %r",
+            "Payload %r does not relate to configured on/off/disable values %r, %r and %r",
             payload,
             output_config["on_payload"],
-            output_config["off_payload"])
+            output_config["off_payload"],
+            output_config["disable_payload"])
         return
     set_pin(output_config, "pin", payload == output_config["on_payload"])
     if output_config["enable_pin"] is None:
         return
-    set_pin(output_config, "enable_pin", True)
+    set_pin(output_config, "enable_pin", payload != output_config["disable_payload"])
     client.publish(
         "%s/%s/%s" % (topic_prefix, OUTPUT_TOPIC, output_config["name"]),
         retain=output_config["retain"],
