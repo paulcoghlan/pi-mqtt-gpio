@@ -453,7 +453,7 @@ def initialise_digital_input(in_conf, gpio):
         in_conf["pin"], PinDirection.INPUT, pud, in_conf)
 
 
-def initialise_digital_output(out_conf_pin, gpio):
+def initialise_digital_output(out_conf, pin, gpio):
     """
     Initialises digital output.
     :param out_conf_pin: Output config
@@ -463,7 +463,7 @@ def initialise_digital_output(out_conf_pin, gpio):
     :return: None
     :rtype: NoneType
     """
-    gpio.setup_pin(out_conf_pin, PinDirection.OUTPUT, None, out_conf)
+    gpio.setup_pin(out_conf[pin], PinDirection.OUTPUT, None, out_conf)
 
 
 if __name__ == "__main__":
@@ -505,7 +505,9 @@ if __name__ == "__main__":
         LAST_STATES[in_conf["name"]] = None
 
     for out_conf in digital_outputs:
-        initialise_digital_output(out_conf, GPIO_MODULES[out_conf["module"]])
+        initialise_digital_output(out_conf, "pin", GPIO_MODULES[out_conf["module"]])
+        if out_conf["enable_pin"] is not None:
+            initialise_digital_output(out_conf, "enable_pin", GPIO_MODULES[out_conf["module"]])
 
     try:
         client.connect(config["mqtt"]["host"], config["mqtt"]["port"], 60)
