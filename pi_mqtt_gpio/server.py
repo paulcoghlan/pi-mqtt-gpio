@@ -154,9 +154,8 @@ def handle_set(msg):
             output_config["disable_payload"])
         return
     set_pin(output_config, "pin", payload == output_config["on_payload"])
-    if output_config["enable_pin"] is None:
-        return
-    set_pin(output_config, "enable_pin", payload != output_config["disable_payload"])
+    if "enable_pin" in output_config:
+        set_pin(output_config, "enable_pin", payload != output_config["disable_payload"])
     client.publish(
         "%s/%s/%s" % (topic_prefix, OUTPUT_TOPIC, output_config["name"]),
         retain=output_config["retain"],
@@ -517,7 +516,7 @@ if __name__ == "__main__":
 
     for out_conf in digital_outputs:
         initialise_digital_output(out_conf, "pin", GPIO_MODULES[out_conf["module"]])
-        if out_conf["enable_pin"] is not None:
+        if "enable_pin" in out_conf:
             initialise_digital_output(out_conf, "enable_pin", GPIO_MODULES[out_conf["module"]])
 
     try:
